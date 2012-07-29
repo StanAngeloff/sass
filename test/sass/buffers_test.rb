@@ -7,22 +7,22 @@ require 'sass/engine'
 class SassBufferTest < Test::Unit::TestCase
   def test_buffer_node
     node = Sass::Tree::BufferNode.new
-    assert(node.is_a?(Sass::Tree::Node), 'BufferNode expected to inherit from Node')
+    assert_kind_of(Sass::Tree::Node, node, 'BufferNode expected to inherit from Node')
     assert_respond_to(node, :name, 'BufferNode expected to include a name(..) method')
     assert_respond_to(node, :resolved_name, 'BufferNode expected to include a resolved_name(..) method to include result of interpolations')
 
     node = Sass::Tree::BufferNode.new('buffer')
-    assert('buffer' == node.name, 'BufferNode expected to initialize @name from constructor')
-    assert(node.resolved_name.nil?, 'BufferNode should not resolve interpolations on its own')
+    assert_equal('buffer', node.name, 'BufferNode expected to initialize @name from constructor')
+    assert_nil(node.resolved_name, 'BufferNode should not resolve interpolations on its own')
 
     assert_send([node, :bubbles?], 'BufferNode expected to bubble rules')
   end
 
   def test_flush_node
     node = Sass::Tree::FlushNode.new
-    assert(node.is_a?(Sass::Tree::BufferNode), 'FlushNode expected to inherit from BufferNode')
+    assert_kind_of(Sass::Tree::BufferNode, node, 'FlushNode expected to inherit from BufferNode')
 
-    assert(node.bubbles? == false, 'FlushNode expected NOT to bubble rules (unlike BufferNode)')
+    assert_equal(false, node.bubbles?, 'FlushNode expected NOT to bubble rules (unlike BufferNode)')
   end
 
   def test_sass_parser
@@ -53,7 +53,7 @@ class SassBufferTest < Test::Unit::TestCase
   end
 
   def test_scss_parser
-    [:buffer, :flush].each {|d| assert(Sass::SCSS::Parser::DIRECTIVES.include?(d), "expected SCSS parser directives to include @#{d.to_s}") }
+    [:buffer, :flush].each {|d| assert_includes(Sass::SCSS::Parser::DIRECTIVES, d, "expected SCSS parser directives to include @#{d.to_s}") }
 
     assert_has_node(:scss, :buffer, "html { }\n@buffer hello;\nbody { }")
     assert_has_node(:scss, :buffer, "html { }\n@buffer hello { };\nbody { }")
@@ -86,18 +86,18 @@ class SassBufferTest < Test::Unit::TestCase
     else
       raise "Unsupported mode '#{mode.to_s}'"
     end
-    assert(tree.is_a?(Sass::Tree::RootNode), "expected code '#{code}' to produce a 'RootNode' object after parsing, got '#{tree.inspect}'")
+    assert_instance_of(Sass::Tree::RootNode, tree, "expected code '#{code}' to produce a 'RootNode' object after parsing, got '#{tree.inspect}'")
     assert(tree.children.length > 0, "expected code '#{code}' to produce children for 'RootNode' after parsing, got '#{tree.inspect}'")
     klass = Sass::Tree.const_get("#{type.to_s.capitalize}Node")
     node = tree.children.find {|c| c.is_a?(klass)}
-    assert(!node.nil?, "expected code '#{code}' to produce child of type '#{klass.to_s},' got '#{tree.inspect}'")
+    refute_nil(node, "expected code '#{code}' to produce child of type '#{klass.to_s},' got '#{tree.inspect}'")
     node
   end
 
   def assert_interpolated_name(*args)
     node = assert_has_node(*args)
     op = node.name.find {|n| !n.is_a?(String)}
-    assert(!op.nil?, "expected name to accept interpolations")
+    refute_nil(op, "expected name to accept interpolations")
   end
 
   def assert_parser_fails(mode, type, tests)
