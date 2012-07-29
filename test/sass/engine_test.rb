@@ -42,8 +42,8 @@ MSG
     "a\n  @extend .foo .bar" => "Can't extend .foo .bar: can't extend nested selectors",
     "a\n  @extend >" => "Can't extend >: invalid selector",
     "a\n  @extend &.foo" => "Can't extend &.foo: can't extend parent selectors",
-    "a: b" => 'Properties are only allowed within rules, directives, mixin includes, or other properties.',
-    ":a b" => 'Properties are only allowed within rules, directives, mixin includes, or other properties.',
+    "a: b" => 'Properties are only allowed within rules, directives, mixin includes, buffers, or other properties.',
+    ":a b" => 'Properties are only allowed within rules, directives, mixin includes, buffers, or other properties.',
     "$" => 'Invalid variable: "$".',
     "$a" => 'Invalid variable: "$a".',
     "$ a" => 'Invalid variable: "$ a".',
@@ -89,7 +89,7 @@ MSG
     "=a(,)" => 'Invalid CSS after "(": expected variable (e.g. $foo), was ",)"',
     "=a($)" => 'Invalid CSS after "(": expected variable (e.g. $foo), was "$)"',
     "=a($foo bar)" => 'Invalid CSS after "($foo ": expected ")", was "bar)"',
-    "=foo\n  bar: baz\n+foo" => ["Properties are only allowed within rules, directives, mixin includes, or other properties.", 2],
+    "=foo\n  bar: baz\n+foo" => ["Properties are only allowed within rules, directives, mixin includes, buffers, or other properties.", 2],
     "a-\#{$b\n  c: d" => ['Invalid CSS after "a-#{$b": expected "}", was ""', 1],
     "=a($b: 1, $c)" => "Required argument $c must come before any optional arguments.",
     "=a($b: 1)\n  a: $b\ndiv\n  +a(1,2)" => "Mixin a takes 1 argument but 2 were passed.",
@@ -602,7 +602,7 @@ SASS
   rescue Sass::SyntaxError => e
     assert_equal(<<CSS, Sass::SyntaxError.exception_to_css(e, opts).split("\n")[0..11].join("\n"))
 /*
-Syntax error: Properties are only allowed within rules, directives, mixin includes, or other properties.
+Syntax error: Properties are only allowed within rules, directives, mixin includes, buffers, or other properties.
         on line 4 of test_cssize_exception_css_inline.sass
 
 1: .filler

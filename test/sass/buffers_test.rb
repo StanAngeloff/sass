@@ -108,6 +108,31 @@ class SassBufferTest < Test::Unit::TestCase
     assert_nil(buff, 'expected neighboring Environment to be separate')
   end
 
+  def test_nesting
+    klass = Sass::Tree::BufferNode
+    [[:VALID_PROP_PARENTS, "expected properties to be allowed in #{klass.to_s}"],
+     [:VALID_EXTEND_PARENTS, "expected @extend directives to be allowed in #{klass.to_s}"],
+     [:INVALID_IMPORT_PARENTS, "expected @import directives to be disallowed in #{klass.to_s}."]
+    ].each do |test|
+      const, message = test
+      assert_includes(Sass::Tree::Visitors::CheckNesting.const_get(const), klass, message)
+    end
+
+    [["@buffer hello { property: { key: value; } }", nil],
+     ["@buffer hello { @extend .class; }", nil],
+     ["@buffer hello { @import 'file'; }", Sass::SyntaxError, 'expected @import directive to fail in a @buffer']
+    ].each do |test|
+      code, klass, message = test
+      node = assert_has_node(:scss, :buffer, code)
+      exec = lambda { Sass::Tree::Visitors::CheckNesting.visit(node) }
+      if klass.nil?
+        assert_nothing_raised { exec.call }
+      else
+        assert_raise *[klass, message] { exec.call }
+      end
+    end
+  end
+
   private
 
   def assert_has_node(mode, type, code)

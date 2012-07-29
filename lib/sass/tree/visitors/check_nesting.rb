@@ -66,7 +66,10 @@ class Sass::Tree::Visitors::CheckNesting < Sass::Tree::Visitors::Base
     "@charset may only be used at the root of a document." unless parent.is_a?(Sass::Tree::RootNode)
   end
 
-  VALID_EXTEND_PARENTS = [Sass::Tree::RuleNode, Sass::Tree::MixinDefNode, Sass::Tree::MixinNode]
+  VALID_EXTEND_PARENTS = [
+    Sass::Tree::RuleNode, Sass::Tree::MixinDefNode, Sass::Tree::MixinNode,
+    Sass::Tree::BufferNode
+  ]
   def invalid_extend_parent?(parent, child)
     unless is_any_of?(parent, VALID_EXTEND_PARENTS)
       return "Extend directives may only be used within rules."
@@ -74,7 +77,7 @@ class Sass::Tree::Visitors::CheckNesting < Sass::Tree::Visitors::Base
   end
 
   INVALID_IMPORT_PARENTS = CONTROL_NODES +
-    [Sass::Tree::MixinDefNode, Sass::Tree::MixinNode]
+    [Sass::Tree::MixinDefNode, Sass::Tree::MixinNode, Sass::Tree::BufferNode]
   def invalid_import_parent?(parent, child)
     unless (@parents.map {|p| p.class} & INVALID_IMPORT_PARENTS).empty?
       return "Import directives may not be used within control directives or mixins."
@@ -118,10 +121,10 @@ class Sass::Tree::Visitors::CheckNesting < Sass::Tree::Visitors::Base
 
   VALID_PROP_PARENTS = [Sass::Tree::RuleNode, Sass::Tree::PropNode,
                         Sass::Tree::MixinDefNode, Sass::Tree::DirectiveNode,
-                        Sass::Tree::MixinNode]
+                        Sass::Tree::MixinNode, Sass::Tree::BufferNode]
   def invalid_prop_parent?(parent, child)
     unless is_any_of?(parent, VALID_PROP_PARENTS)
-      "Properties are only allowed within rules, directives, mixin includes, or other properties." + child.pseudo_class_selector_message
+      "Properties are only allowed within rules, directives, mixin includes, buffers, or other properties." + child.pseudo_class_selector_message
     end
   end
 
