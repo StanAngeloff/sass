@@ -571,7 +571,7 @@ WARNING
           parse_mixin_include(line, root)
         end
       else
-        parse_property_or_rule(line)
+        parse_buffer_or_flush(line) || parse_property_or_rule(line)
       end
     end
 
@@ -646,6 +646,14 @@ WARNING
       end
     end
 
+    # Directive names used throughout the code (specified here to avoid
+    # duplication).
+
+    # The `@buffer` diretive name
+    BUFFER_DIRECTIVE = 'buffer'
+    # The `@flush` directive name
+    FLUSH_DIRECTIVE  = 'flush'
+
     def parse_directive(parent, line, root)
       directive, whitespace, value = line.text[1..-1].split(/(\s+)/, 2)
       offset = directive.size + whitespace.size + 1 if whitespace
@@ -661,6 +669,10 @@ WARNING
         parse_content_directive(line)
       when 'include'
         parse_mixin_include(line, root)
+      when BUFFER_DIRECTIVE
+        parse_buffer(line)
+      when FLUSH_DIRECTIVE
+        parse_flush(line)
       when 'function'
         parse_function(line, root)
       when 'for'
@@ -852,6 +864,36 @@ WARNING
       args, keywords = Script::Parser.new(arg_string.strip, @line, offset, @options).
         parse_mixin_include_arglist
       Tree::MixinNode.new(name, args, keywords)
+    end
+
+    # The regex that specifies a buffer group
+    BUFFER_RE = /^(?:(.*)\s*->|@#{BUFFER_DIRECTIVE}\s+(.*))$/
+
+    # The regex that specified a buffer include (flush)
+    FLUSH_RE  = /^(?:<-\s*|@#{FLUSH_DIRECTIVE}\s+)(.*)$/
+
+    def parse_buffer_directive(line, re, klass)
+      group = line.text.scan(re).first
+      name = group.compact.first.strip unless group.nil?
+      raise SyntaxError.new("Invalid buffer directive \"#{line.text}\".") if group.nil? || name.empty?
+      klass.new(parse_interp(name))
+    end
+
+    def parse_buffer(line)
+      parse_buffer_directive(line, BUFFER_RE, Sass::Tree::BufferNode)
+    end
+
+    def parse_flush(line)
+      parse_buffer_directive(line, FLUSH_RE, Sass::Tree::FlushNode)
+    end
+
+    def parse_buffer_or_flush(line)
+      node = nil
+      [BUFFER_DIRECTIVE, FLUSH_DIRECTIVE].find do |d|
+        re = self.class.const_get("#{d.upcase}_RE")
+        node = self.send("parse_#{d}".to_sym, line) if line.text =~ re
+      end
+      node
     end
 
     FUNCTION_RE = /^@function\s*(#{Sass::SCSS::RX::IDENT})(.*)$/
