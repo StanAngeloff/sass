@@ -8,6 +8,7 @@ class Sass::Tree::Visitors::SetOptions < Sass::Tree::Visitors::Base
 
   def initialize(options)
     @options = options
+    super()
   end
 
   def visit(node)

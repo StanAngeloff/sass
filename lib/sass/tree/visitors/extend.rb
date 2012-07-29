@@ -19,8 +19,8 @@ class Sass::Tree::Visitors::Extend < Sass::Tree::Visitors::Base
   protected
 
   def initialize(extends)
-    @parent_directives = []
     @extends = extends
+    super()
   end
 
   # If an exception is raised, this adds proper metadata to the backtrace.
@@ -33,10 +33,9 @@ class Sass::Tree::Visitors::Extend < Sass::Tree::Visitors::Base
 
   # Keeps track of the current parent directives.
   def visit_children(parent)
-    @parent_directives.push parent if parent.is_a?(Sass::Tree::DirectiveNode)
-    super
-  ensure
-    @parent_directives.pop if parent.is_a?(Sass::Tree::DirectiveNode)
+    with_parent parent do
+      super
+    end
   end
 
   # Applies the extend to a single rule's selector.

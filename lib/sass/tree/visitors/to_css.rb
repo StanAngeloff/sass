@@ -4,6 +4,7 @@ class Sass::Tree::Visitors::ToCss < Sass::Tree::Visitors::Base
 
   def initialize
     @tabs = 0
+    super()
   end
 
   def visit(node)

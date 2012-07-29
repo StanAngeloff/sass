@@ -26,6 +26,14 @@ module Sass::Tree::Visitors
 
     protected
 
+    # Returns the immediate parent of the current node.
+    # @return [Tree::Node]
+    attr_reader :parent
+
+    def initialize
+      @parent_directives = []
+    end
+
     # Runs the visitor on the given node.
     # This can be overridden by subclasses that need to do something for each node.
     #
@@ -51,6 +59,21 @@ module Sass::Tree::Visitors
     # @return [Array<Object>] The return values of the `visit_*` methods for the children.
     def visit_children(parent)
       parent.children.map {|c| visit(c)}
+    end
+
+    # Runs a block of code with the current parent node
+    # replaced with the given node.
+    #
+    # @param parent [Tree::Node] The new parent for the duration of the block.
+    # @yield A block in which the parent is set to `parent`.
+    # @return [Object] The return value of the block.
+    def with_parent(parent)
+      @parent_directives.push parent if parent.is_a?(Sass::Tree::DirectiveNode)
+      old_parent, @parent = @parent, parent
+      yield
+    ensure
+      @parent_directives.pop if parent.is_a?(Sass::Tree::DirectiveNode)
+      @parent = old_parent
     end
 
     NODE_NAME_RE = /.*::(.*?)Node$/

@@ -13,6 +13,7 @@ class Sass::Tree::Visitors::Perform < Sass::Tree::Visitors::Base
     @environment = env
     # Stack trace information, including mixin includes and imports.
     @stack = []
+    super()
   end
 
   # If an exception is raised, this adds proper metadata to the backtrace.

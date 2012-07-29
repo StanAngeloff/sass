@@ -7,13 +7,9 @@ class Sass::Tree::Visitors::Cssize < Sass::Tree::Visitors::Base
 
   protected
 
-  # Returns the immediate parent of the current node.
-  # @return [Tree::Node]
-  attr_reader :parent
-
   def initialize
-    @parent_directives = []
     @extends = Sass::Util::SubsetMap.new
+    super()
   end
 
   # If an exception is raised, this adds proper metadata to the backtrace.
@@ -30,21 +26,6 @@ class Sass::Tree::Visitors::Cssize < Sass::Tree::Visitors::Base
       parent.children = super.flatten
       parent
     end
-  end
-
-  # Runs a block of code with the current parent node
-  # replaced with the given node.
-  #
-  # @param parent [Tree::Node] The new parent for the duration of the block.
-  # @yield A block in which the parent is set to `parent`.
-  # @return [Object] The return value of the block.
-  def with_parent(parent)
-    @parent_directives.push parent if parent.is_a?(Sass::Tree::DirectiveNode)
-    old_parent, @parent = @parent, parent
-    yield
-  ensure
-    @parent_directives.pop if parent.is_a?(Sass::Tree::DirectiveNode)
-    @parent = old_parent
   end
 
   # In Ruby 1.8, ensures that there's only one `@charset` directive
