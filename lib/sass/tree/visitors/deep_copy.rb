@@ -22,7 +22,7 @@ class Sass::Tree::Visitors::DeepCopy < Sass::Tree::Visitors::Base
   end
 
   def visit_extend(node)
-    node.selector = node.selector.map {|c| c.is_a?(Sass::Script::Node) ? c.deep_copy : c}
+    deep_copy_attrs(node, :selector)
     yield
   end
 
@@ -55,7 +55,7 @@ class Sass::Tree::Visitors::DeepCopy < Sass::Tree::Visitors::Base
   end
 
   def visit_prop(node)
-    node.name = node.name.map {|c| c.is_a?(Sass::Script::Node) ? c.deep_copy : c}
+    deep_copy_attrs(node, :name)
     node.value = node.value.deep_copy
     yield
   end
@@ -66,7 +66,7 @@ class Sass::Tree::Visitors::DeepCopy < Sass::Tree::Visitors::Base
   end
 
   def visit_rule(node)
-    node.rule = node.rule.map {|c| c.is_a?(Sass::Script::Node) ? c.deep_copy : c}
+    deep_copy_attrs(node, :rule)
     yield
   end
 
@@ -86,17 +86,25 @@ class Sass::Tree::Visitors::DeepCopy < Sass::Tree::Visitors::Base
   end
 
   def visit_directive(node)
-    node.value = node.value.map {|c| c.is_a?(Sass::Script::Node) ? c.deep_copy : c}
+    deep_copy_attrs(node, :value)
     yield
   end
 
   def visit_media(node)
-    node.query = node.query.map {|c| c.is_a?(Sass::Script::Node) ? c.deep_copy : c}
+    deep_copy_attrs(node, :query)
     yield
   end
 
   def visit_supports(node)
     node.condition = node.condition.deep_copy
     yield
+  end
+
+  private
+
+  def deep_copy_attrs(node, *args)
+    args.each do |name|
+      node.send("#{name}=", node.send(name).map {|c| c.is_a?(Sass::Script::Node) ? c.deep_copy : c})
+    end
   end
 end
