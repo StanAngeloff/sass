@@ -75,6 +75,39 @@ class SassBufferTest < Test::Unit::TestCase
     assert_interpolated_name(:scss, :flush,  "html { }\n@flush \#{ $dynamic + '-value' }-name;\nbody { }")
   end
 
+  def test_environment
+    env = Sass::Environment.new
+
+    assert_respond_to(env, :buffer, 'Environment expected to include a buffer(..) method')
+    assert_respond_to(env, :append_buffer, 'Environment expected to include an append_buffer(..) method')
+
+    buff = env.buffer('hello')
+    assert_nil(buff, 'expected clean environment to have NO buffers')
+    env.append_buffer('hello', 'World!')
+    buff = env.buffer('hello')
+    refute_nil(buff, 'expected environment to contain appended item')
+    assert_instance_of(Array, buff, 'expected environment to put buffer items in an Array')
+    assert_equal(1, buff.length, 'expected buffer length to be 1, i.e., the number of times append_buffer(..) was called')
+
+    env.append_buffer('hello', 'We meet again!')
+    buff = env.buffer('hello')
+    assert_equal(2, buff.length, 'expected buffer length to be 2, i.e., the number of times append_buffer(..) was called')
+
+    assert_equal(['World!', 'We meet again!'], buff, 'expected buffer contents to match appended items')
+
+    child = Sass::Environment.new(env)
+    buff2 = child.buffer('hello')
+    assert_same(buff, buff2, 'expected child Environment to inherit buffers from parent')
+
+    child.append_buffer('hello', 'final')
+    buff = env.buffer('hello')
+    assert_equal(3, buff.length, 'expected child append_buffer(..) call to delegate to parent')
+
+    neighbor = Sass::Environment.new
+    buff = neighbor.buffer('hello')
+    assert_nil(buff, 'expected neighboring Environment to be separate')
+  end
+
   private
 
   def assert_has_node(mode, type, code)

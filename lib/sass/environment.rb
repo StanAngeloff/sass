@@ -86,6 +86,31 @@ module Sass
           end
 RUBY
       end
+
+      def parent_hash_list(name)
+        class_eval <<RUBY, __FILE__, __LINE__ + 1
+          def #{name}(name)
+            _#{name}(name.tr(UNDERSCORE, DASH))
+          end
+
+          def _#{name}(name)
+            if @parent
+              @parent._#{name}(name)
+            else
+              @#{name}s && @#{name}s[name]
+            end
+          end
+
+          def append_#{name}(name, value)
+            if @parent
+              @parent.append_#{name}(name, value)
+            else
+              @#{name}s ||= {}
+              (@#{name}s[name.tr(UNDERSCORE, DASH)] ||= []) << value
+            end
+          end
+RUBY
+      end
     end
 
     # variable
@@ -97,5 +122,9 @@ RUBY
     # function
     # Sass::Callable
     inherited_hash :function
+
+    # buffer
+    # Sass::Callable
+    parent_hash_list :buffer
   end
 end
