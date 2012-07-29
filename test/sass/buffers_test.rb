@@ -52,12 +52,37 @@ class SassBufferTest < Test::Unit::TestCase
     assert_interpolated_name(:sass, :flush,  "html\n<- \#{ $dynamic + '-value' }-name\nbody")
   end
 
+  def test_scss_parser
+    [:buffer, :flush].each {|d| assert(Sass::SCSS::Parser::DIRECTIVES.include?(d), "expected SCSS parser directives to include @#{d.to_s}") }
+
+    assert_has_node(:scss, :buffer, "html { }\n@buffer hello;\nbody { }")
+    assert_has_node(:scss, :buffer, "html { }\n@buffer hello { };\nbody { }")
+
+    assert_has_node(:scss, :flush,  "html { }\n@flush hello;\nbody { }")
+
+    assert_parser_fails(:scss, :buffer,
+      [[MiniTest::Assertion, [
+         "html { }\n@bufferhello;\nbody { }",
+         "html { }\n@flushhello;\nbody { }"]],
+       [Sass::SyntaxError, [
+         "html { }\n@buffer;\nbody { }",
+         "html { }\n@flush;\nbody { }",
+         "html { }\n@flush hello { };\nbody { }"]]
+      ]
+    )
+
+    assert_interpolated_name(:scss, :buffer, "html { }\n@buffer \#{ $dynamic + '-value' }-name { }\nbody { }")
+    assert_interpolated_name(:scss, :flush,  "html { }\n@flush \#{ $dynamic + '-value' }-name;\nbody { }")
+  end
+
   private
 
   def assert_has_node(mode, type, code)
     case mode
     when :sass
       tree = Sass::Engine.new(code, :quiet => true).to_tree
+    when :scss
+      tree = Sass::SCSS::Parser.new(code, 'test.scss').parse
     else
       raise "Unsupported mode '#{mode.to_s}'"
     end

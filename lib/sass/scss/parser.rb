@@ -121,9 +121,9 @@ module Sass
         node << comment
       end
 
-      DIRECTIVES = Set[:mixin, :include, :function, :return, :debug, :warn, :for,
-        :each, :while, :if, :else, :extend, :import, :media, :charset, :content,
-        :_moz_document]
+      DIRECTIVES = Set[:mixin, :include, :buffer, :flush, :function, :return,
+        :debug, :warn, :for, :each, :while, :if, :else, :extend, :import, :media,
+        :charset, :content, :_moz_document]
 
       PREFIXED_DIRECTIVES = Set[:supports]
 
@@ -186,6 +186,26 @@ module Sass
         else
           include_node
         end
+      end
+
+      def buffer_directive
+        name = interp_ident
+        expected 'buffer name' if name.nil? || name.empty?
+        ss
+        buffer_node = node(Sass::Tree::BufferNode.new(name))
+        if tok?(/\{/)
+          buffer_node.has_children = true
+          block(buffer_node, :directive)
+        else
+          buffer_node
+        end
+      end
+
+      def flush_directive
+        name = interp_ident
+        expected 'buffer name' if name.nil? || name.empty?
+        ss
+        node(Sass::Tree::FlushNode.new(name))
       end
 
       def content_directive
