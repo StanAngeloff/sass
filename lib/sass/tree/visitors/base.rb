@@ -95,14 +95,26 @@ module Sass::Tree::Visitors
       node
     end
 
-    def bubble(node)
+    def bubble(node, options = {})
       return unless parent.is_a?(Sass::Tree::RuleNode)
       new_rule = parent.dup
       new_rule.children = node.children
-      node.children = with_parent(node) {Array(visit(new_rule))}
+      node.children = with_parent(node) do
+        children = visit(new_rule)
+        # Cast children to Array unless explicityly turned off.
+        # This is useful when we want to avoid flattening the list.
+        if options[:to_array].nil? || options[:to_array]
+          Array(children)
+        else
+          [children]
+        end
+      end
       # If the last child is actually the end of the group,
       # the parent's cssize will set it properly
-      node.children.last.group_end = false unless node.children.empty?
+      unless node.children.empty?
+        last = node.children.last
+        last.group_end = false if last.respond_to?(:group_end)
+      end
       true
     end
   end

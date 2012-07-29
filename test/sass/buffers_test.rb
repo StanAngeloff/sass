@@ -144,6 +144,375 @@ class SassBufferTest < Test::Unit::TestCase
     end
   end
 
+  def test_basic_buffer_and_flush
+    assert_equal <<CSS, render(<<SCSS)
+html {
+  property: value; }
+CSS
+@buffer #{__method__} {
+  html { property: value; }
+}
+@flush #{__method__};
+SCSS
+  end
+
+  def test_append_to_buffer_and_flush
+    assert_equal <<CSS, render(<<SCSS)
+html {
+  property: value; }
+
+body {
+  property-2: value; }
+CSS
+@buffer #{__method__} {
+  html { property: value; }
+}
+@buffer #{__method__} {
+  body { property-2: value; }
+}
+@flush #{__method__};
+SCSS
+  end
+
+  def test_interpolated_buffer_and_flush
+    assert_equal <<CSS, render(<<SCSS)
+html {
+  property: value; }
+CSS
+$name: '#{__method__}';
+
+@buffer append-#{$name}-prepend {
+  html { property: value; }
+}
+@flush append-#{$name}-prepend;
+SCSS
+  end
+
+  def test_bubbling_buffer_and_blush
+    assert_equal <<CSS, render(<<SCSS)
+html {
+  property: value; }
+
+html {
+  property-2: value; }
+CSS
+html {
+  property: value;
+
+  @buffer #{__method__} { property-2: value; }
+}
+
+@flush #{__method__};
+SCSS
+  end
+
+  def test_append_to_bubbling_buffer_and_flush
+    assert_equal <<CSS, render(<<SCSS)
+html {
+  property: value; }
+
+body {
+  property-2: value; }
+CSS
+html {
+  @buffer #{__method__} { property: value; }
+}
+
+body {
+  @buffer #{__method__} { property-2: value; }
+}
+
+@flush #{__method__};
+SCSS
+  end
+
+  def test_empty_childred_do_not_create_buffer
+    assert_raise Sass::SyntaxError do
+      render(<<SCSS)
+html {
+  @buffer #{__method__};
+}
+
+@flush #{__method__};
+SCSS
+    end
+    assert_equal '', render(<<SCSS)
+html {
+  @buffer #{__method__} {
+    // force
+  }
+}
+
+@flush #{__method__};
+SCSS
+  end
+
+  def test_buffer_and_media_queries
+    assert_equal <<CSS, render(<<SCSS)
+#page {
+  min-width: 960px; }
+
+#nav {
+  max-width: 400px; }
+
+@media only screen and (max-width: 320px) {
+  #page {
+    min-width: 0; }
+
+  #nav {
+    max-width: 100%; } }
+CSS
+#page {
+  min-width: 960px;
+  @buffer #{__method__}-small-screen {
+    min-width: 0;
+  }
+}
+
+#nav {
+  max-width: 400px;
+  @buffer #{__method__}-small-screen {
+    max-width: 100%;
+  }
+}
+
+@media only screen and (max-width: 320px) {
+  @flush #{__method__}-small-screen;
+}
+SCSS
+
+    assert_equal <<CSS, render(<<SCSS)
+#page {
+  color: #666; }
+
+#nav {
+  color: #333; }
+
+@media print {
+  #page {
+    color: black; } }
+
+@media print {
+  #nav {
+    color: black; } }
+CSS
+#page {
+  color: #666;
+
+  @buffer #{__method__}-print {
+    @media print { color: black; }
+  }
+}
+
+#nav {
+  color: #333;
+
+  @buffer #{__method__}-print {
+    @media print { color: black; }
+  }
+}
+
+@flush #{__method__}-print;
+SCSS
+  end
+
+  def test_nested_buffers
+    assert_equal <<CSS, render(<<SCSS)
+html {
+  property: value; }
+CSS
+html {
+  @buffer #{__method__} {
+    @buffer #{__method__}-level-1 {
+      @buffer #{__method__}-level-2 { property: value; }
+    }
+  }
+}
+
+@flush #{__method__};
+@flush #{__method__}-level-1;
+@flush #{__method__}-level-2;
+SCSS
+  end
+
+  def test_parent_selected_in_buffer
+    assert_equal <<CSS, render(<<SCSS)
+html {
+  text-align: left; }
+
+.no-js html {
+  text-align: right; }
+
+.no-cssgradients body #page {
+  background: white; }
+CSS
+html {
+  text-align: left;
+
+  @buffer #{__method__} {
+    .no-js & { text-align: right; }
+  }
+}
+
+body {
+  @buffer #{__method__} {
+    .no-cssgradients & {
+      & #page { background: white; }
+    }
+  }
+}
+
+@flush #{__method__};
+SCSS
+  end
+
+  def test_mixin_and_content_in_buffer
+    assert_equal <<CSS, render(<<SCSS)
+html {
+  text-align: left; }
+
+.no-js html {
+  text-align: right; }
+CSS
+@mixin if-no-js {
+  .no-js & { @content; }
+}
+
+html {
+  text-align: left;
+
+  @buffer #{__method__} {
+    @include if-no-js { text-align: right; }
+  }
+}
+
+@flush #{__method__};
+SCSS
+  end
+
+  def test_mixin_in_buffer_and_flush_in_rule
+    assert_equal <<CSS, render(<<SCSS)
+html {
+  text-align: left; }
+
+body {
+  text-align: right; }
+
+.no-js html {
+  text-align: right; }
+.no-js body {
+  text-align: left; }
+CSS
+@mixin if-no-js {
+  @buffer #{__method__} { @content; }
+}
+
+@mixin flush-no-js {
+  .no-js { @flush #{__method__}; }
+}
+
+html {
+  text-align: left;
+
+  @include if-no-js { text-align: right; }
+}
+
+body {
+  text-align: right;
+
+  @include if-no-js { text-align: left; }
+}
+
+@include flush-no-js;
+SCSS
+  end
+
+  def test_buffer_and_extend
+    assert_equal <<CSS, render(<<SCSS)
+.align-left, html {
+  text-align: left; }
+
+body {
+  text-align: right; }
+CSS
+.align-left {
+  text-align: left;
+}
+
+html {
+  @buffer #{__method__} {
+    @extend .align-left;
+  }
+}
+
+@buffer #{__method__} {
+  body { text-align: right; }
+}
+
+@flush #{__method__};
+SCSS
+  end
+
+  def test_buffer_and_silent_class_extend
+    assert_equal <<CSS, render(<<SCSS)
+html {
+  text-align: left; }
+
+body {
+  text-align: right; }
+CSS
+%align-left {
+  text-align: left;
+}
+
+html {
+  @buffer #{__method__} {
+    @extend %align-left;
+  }
+}
+
+@buffer #{__method__} {
+  body { text-align: right; }
+}
+
+@flush #{__method__};
+SCSS
+
+    assert_equal <<CSS, render(<<SCSS)
+body {
+  text-align: right; }
+CSS
+%align-left {
+  text-align: left;
+}
+
+html {
+  @buffer #{__method__} {
+    @extend %align-left;
+  }
+}
+
+@buffer #{__method__}-different {
+  body { text-align: right; }
+}
+
+@flush #{__method__}-different;
+SCSS
+  end
+
+  def test_buffer_name_is_normalized
+    assert_equal <<CSS, render(<<SCSS)
+html {
+  property: value; }
+CSS
+@buffer #{__method__}-mix-dashes_with_underscores {
+  html { property: value; }
+}
+
+@flush #{__method__}-mix-dashes-with-underscores;
+SCSS
+  end
+
   private
 
   def assert_has_node(mode, type, code)
@@ -177,5 +546,11 @@ class SassBufferTest < Test::Unit::TestCase
         end
       end
     end
+  end
+
+  def render(scss, options = {})
+    options[:syntax] ||= :scss
+    munge_filename options
+    Sass::Engine.new(scss, options).render
   end
 end

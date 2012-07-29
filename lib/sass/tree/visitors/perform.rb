@@ -26,9 +26,11 @@ class Sass::Tree::Visitors::Perform < Sass::Tree::Visitors::Base
 
   # Keeps track of the current environment.
   def visit_children(parent)
-    with_environment Sass::Environment.new(@environment, parent.options) do
-      parent.children = super.flatten
-      parent
+    with_parent parent do
+      with_environment Sass::Environment.new(@environment, parent.options) do
+        parent.children = super.flatten
+        parent
+      end
     end
   end
 
@@ -217,6 +219,33 @@ END
     raise e
   ensure
     @stack.pop unless include_loop
+  end
+
+  def visit_buffer(node)
+    unless node.children.empty?
+      bubble(node, :to_array => false)
+      node.resolved_name = run_interp(node.name)
+      @environment.append_buffer(node.resolved_name,
+        Sass::Callable.new(node.resolved_name, nil, @environment, node.children, false))
+    end
+    []
+  end
+
+  def visit_flush(node)
+    node.resolved_name = run_interp(node.name)
+
+    @stack.push(:filename => node.filename, :line => node.line, :name => node.resolved_name)
+    raise Sass::SyntaxError.new("Undefined buffer '#{node.resolved_name}'.") unless buffer = @environment.buffer(node.resolved_name)
+
+    trace_node = Sass::Tree::TraceNode.from_node(node.resolved_name, node)
+    buffer.each do |b|
+      environment = Sass::Environment.new(b.environment)
+      environment.caller = Sass::Environment.new(@environment)
+      with_environment(environment) {trace_node.children += b.tree.map {|c| visit(c)}.flatten}
+    end
+    trace_node
+  ensure
+    @stack.pop if buffer
   end
 
   def visit_content(node)
