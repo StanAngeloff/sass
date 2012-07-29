@@ -133,6 +133,17 @@ class SassBufferTest < Test::Unit::TestCase
     end
   end
 
+  def test_deep_copy
+    node = assert_has_node(:scss, :buffer, "@buffer \#{ $dynamic + '-operation' }-name\#{ '-followed' + '-by'}-more { }")
+    op1 = node.name.select {|n| !n.is_a?(String)}
+    clone = node.deep_copy
+    op2 = clone.name.select {|n| !n.is_a?(String)}
+    assert_equal(op1.length, op2.length, 'expected clone to have the same number of items in its name')
+    op1.each_with_index do |value, index|
+      assert_not_same(op1[index], op2[index], 'expected clone item to be de-referenced, i.e., a copy')
+    end
+  end
+
   private
 
   def assert_has_node(mode, type, code)

@@ -54,6 +54,16 @@ class Sass::Tree::Visitors::DeepCopy < Sass::Tree::Visitors::Base
     yield
   end
 
+  def visit_buffer(node)
+    deep_copy_attrs(node, :name)
+    yield
+  end
+
+  def visit_flush(node)
+    deep_copy_attrs(node, :name)
+    yield
+  end
+
   def visit_prop(node)
     deep_copy_attrs(node, :name)
     node.value = node.value.deep_copy

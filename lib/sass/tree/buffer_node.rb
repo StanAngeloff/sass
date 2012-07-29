@@ -8,13 +8,13 @@ module Sass::Tree
   class BufferNode < Node
     # The buffer name.
     # @return [String]
-    attr_reader :name
+    attr_accessor :name
 
     # The name for this buffer, without any unresolved interpolation.
     # TODO: document when this property gets set, e.g., by which Visitor.
     #
     # @return [String]
-    attr_reader :resolved_name
+    attr_accessor :resolved_name
 
     # @param name [String] The buffer name
     def initialize(name = nil)
