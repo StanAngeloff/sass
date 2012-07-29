@@ -185,17 +185,4 @@ class Sass::Tree::Visitors::Cssize < Sass::Tree::Visitors::Base
 
     rules
   end
-
-  private
-
-  def bubble(node)
-    return unless parent.is_a?(Sass::Tree::RuleNode)
-    new_rule = parent.dup
-    new_rule.children = node.children
-    node.children = with_parent(node) {Array(visit(new_rule))}
-    # If the last child is actually the end of the group,
-    # the parent's cssize will set it properly
-    node.children.last.group_end = false unless node.children.empty?
-    true
-  end
 end
