@@ -649,9 +649,7 @@ WARNING
     # Directive names used throughout the code (specified here to avoid
     # duplication).
 
-    # The `@buffer` diretive name
     BUFFER_DIRECTIVE = 'buffer'
-    # The `@flush` directive name
     FLUSH_DIRECTIVE  = 'flush'
 
     def parse_directive(parent, line, root)
@@ -869,7 +867,7 @@ WARNING
     # The regex that specifies a buffer group
     BUFFER_RE = /^(?:(.*)\s*->|@#{BUFFER_DIRECTIVE}\s+(.*))$/
 
-    # The regex that specified a buffer include (flush)
+    # The regex that specifies a buffer include (flush)
     FLUSH_RE  = /^(?:<-\s*|@#{FLUSH_DIRECTIVE}\s+)(.*)$/
 
     def parse_buffer_directive(line, re, klass)
