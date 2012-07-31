@@ -1630,6 +1630,70 @@ foo {
 SCSS
   end
 
+  def test_empty_buffer_and_flush
+    assert_renders <<SASS, <<SCSS
+->buffer
+
+<-flush
+SASS
+@buffer buffer {}
+
+@flush flush;
+SCSS
+  end
+
+  def test_interpolated_buffer_and_flush
+    assert_renders <<SASS, <<SCSS
+->hello-\#{$dynamic + "-value"}-name
+
+<-flush
+SASS
+@buffer hello-\#{$dynamic + "-value"}-name {}
+
+@flush flush;
+SCSS
+  end
+
+  def test_buffer_and_flush_with_rules
+    assert_renders <<SASS, <<SCSS
+->align
+  text-align: left
+  & .align-right
+    text-align: right
+
+<-align
+SASS
+@buffer align {
+  text-align: left;
+  & .align-right {
+    text-align: right;
+  }
+}
+
+@flush align;
+SCSS
+    assert_renders <<SASS, <<SCSS
+#page
+  min-width: 960px
+  ->small-screen
+    min-width: 0
+
+@media only screen and (max-width: 640px)
+  <-small-screen
+SASS
+#page {
+  min-width: 960px;
+  @buffer small-screen {
+    min-width: 0;
+  }
+}
+
+@media only screen and (max-width: 640px) {
+  @flush small-screen;
+}
+SCSS
+  end
+
   private
 
   def assert_sass_to_sass(sass, options = {})

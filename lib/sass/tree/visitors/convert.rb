@@ -193,6 +193,14 @@ class Sass::Tree::Visitors::Convert < Sass::Tree::Visitors::Base
     "#{tab_str}#{@format == :sass ? '+' : '@include '}#{dasherize(node.name)}#{arglist}#{node.has_children ? yield : semi}\n"
   end
 
+  def visit_buffer(node)
+    "#{tab_str}#{@format == :sass ? '->' : '@buffer '}#{interp_to_src(node.name)}#{yield}"
+  end
+
+  def visit_flush(node)
+    "#{tab_str}#{@format == :sass ? '<-' : '@flush '}#{interp_to_src(node.name)}#{node.has_children ? yield : semi}\n"
+  end
+
   def visit_content(node)
     "#{tab_str}@content#{semi}\n"
   end
