@@ -865,7 +865,7 @@ WARNING
     end
 
     # The regex that specifies a buffer group
-    BUFFER_RE = /^(?:(.*)\s*->|@#{BUFFER_DIRECTIVE}\s+(.*))$/
+    BUFFER_RE = /^(?:->\s*|@#{BUFFER_DIRECTIVE}\s+)(.*)$/
 
     # The regex that specifies a buffer include (flush)
     FLUSH_RE  = /^(?:<-\s*|@#{FLUSH_DIRECTIVE}\s+)(.*)$/

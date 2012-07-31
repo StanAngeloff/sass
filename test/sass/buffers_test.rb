@@ -26,8 +26,8 @@ class SassBufferTest < Test::Unit::TestCase
   end
 
   def test_sass_parser
-    assert_has_node(:sass, :buffer, "html\nhello->\nbody")
-    assert_has_node(:sass, :buffer, "html\nhello ->\nbody")
+    assert_has_node(:sass, :buffer, "html\n->hello\nbody")
+    assert_has_node(:sass, :buffer, "html\n-> hello\nbody")
     assert_has_node(:sass, :buffer, "html\n@buffer hello\nbody")
 
     assert_has_node(:sass, :flush, "html\n<-flush\nbody")
@@ -36,9 +36,9 @@ class SassBufferTest < Test::Unit::TestCase
 
     assert_parser_fails(:sass, :buffer,
       [[MiniTest::Assertion, [
-         "html\nhello >\nbody",
+         "html\n--> hello\nbody",
+         "html\n> hello\nbody",
          "html\n@bufferhello\nbody",
-         # NOTE: hello --> is OK and would be interpreted as buffer 'hello -'.
 
          "html\n< flush\nbody",
          "html\n@flushhello\nbody"]],
@@ -48,7 +48,7 @@ class SassBufferTest < Test::Unit::TestCase
       ]
     )
 
-    assert_interpolated_name(:sass, :buffer, "html\n\#{ $dynamic + '-value' }-name ->\nbody")
+    assert_interpolated_name(:sass, :buffer, "html\n-> \#{ $dynamic + '-value' }-name\nbody")
     assert_interpolated_name(:sass, :flush,  "html\n<- \#{ $dynamic + '-value' }-name\nbody")
   end
 
